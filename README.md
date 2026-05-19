@@ -1,5 +1,7 @@
 # kairos-folder-audit
 
+**English** · [한국어](./README.ko.md)
+
 > **10 rules. Sunday 06:00. HTML report. For makers running 30+ side projects.**
 
 A folder hygiene health-check CLI that runs 10 configurable rules across your filesystem and emits a sortable HTML report (dark/light toggle, zero dependencies for the core checks).
