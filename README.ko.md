@@ -2,25 +2,65 @@
 
 [English](./README.md) · **한국어**
 
-> **10개 룰. 일요일 06시. HTML 리포트. 30개 이상 사이드 프로젝트 굴리는 메이커를 위한 도구.**
+> 일요일 아침 폴더 위생 게이트. 30개 이상 사이드 프로젝트 굴리는 메이커를 위한 도구.
 
-폴더 트리를 워크하면서 10개 설정 가능한 룰을 적용하고, 다크/라이트 토글이 있는 자체완결 HTML 리포트를 생성하는 CLI입니다. 핵심 검사는 의존성 0개 (Python 표준 라이브러리만).
+![demo](./docs/demo.gif)
 
-[@sun.young.0207](https://instagram.com/sun.young.0207)가 "35개 repo 문제" — _"35개 GitHub repo 굴리는데, repo #28은 마지막으로 언제 열었지?"_ — 를 해결하려고 만들었습니다.
+---
 
-![Folder Audit Report 스크린샷 — 다크 모드](docs/screenshot-dark.png)
+## 35개 repo 문제
 
-## 무엇이냐
+어느 일요일 아침이었어요. 깃허브를 열다가, 제가 **35개 repo**를 운영하고 있다는 걸 새삼 확인했습니다. 사이드 프로젝트, K-Series 마이크로 SaaS, audit 도구, 콘텐츠 영상 — 다 살아있고, 다 다른 상태로요.
 
-**단일 파일 Python 스크립트**. 폴더 트리를 워크하고, 10개 룰 (빈 폴더 / dormant 폴더 / README 누락 / MD5 중복 / misplaced 루트 파일 / 슬러그 컨벤션 / 거대 파일 / 루트 화이트리스트 / untracked git 누적 / .env 보호)을 적용해서, 공유·박제·일요일 cron에 걸 수 있는 자체완결 HTML 리포트를 렌더링합니다.
+그러다 한 번도 안 해본 생각이 들었어요. _"#28번 repo는 마지막으로 언제 열었지?"_
 
-## 무엇이 **아닌가**
+전혀 기억이 안 났습니다.
 
-- ❌ 코드 린터 아님 ([Ruff](https://github.com/astral-sh/ruff) 쓰세요)
-- ❌ 시크릿 스캐너 아님 ([Gitleaks](https://github.com/gitleaks/gitleaks) 쓰세요)
-- ❌ OSPO 컴플라이언스 도구 아님 ([repolinter](https://github.com/todogroup/repolinter) — RIP, 2026-02 archived)
-- ❌ 파일 자동 이동기 아님 ([organize](https://github.com/tfeldmann/organize) 쓰세요)
-- ✅ **30개 이상 repo 굴리는 인디 메이커를 위한 일요일 아침 폴더 위생 게이트.**
+폴더를 **측정**해본 적이 없었던 거예요. 정리야 가끔 했죠. 측정은 한 번도 안 해봤어요. 그래서 AI한테 시켰습니다.
+
+10개 룰. 한 줄 명령. 첫 실행이 **40건**을 찾아냈습니다:
+- 빈 폴더 4개 — 오래된 프로젝트에 그대로 남은 것
+- README 없는 디렉토리 9개 — 뭐 하는 폴더인지 저도 까먹은 것
+- 같은 노트의 중복 9건 — 3군데에 똑같이 박혀있던 것
+- untracked 파일 16건 — git status에 조용히 쌓이던 것
+- 잘못된 위치 markdown 2건 — 디렉토리 위치가 어긋난 것
+
+5분 안에 18건 정리했어요. 나머지는 **advisory**로 박제 — 알고 있되 급하지 않은 것.
+
+근데 진짜 가치는 정리 자체가 아니었습니다.
+
+**일요일 06:00 cron으로 매주 자동 실행하게 해둔 것**이었어요. 그 시점부터, **다시는 모를 수가 없게** 됐어요.
+
+검사를 자동화하면, 정리는 자연스럽게 따라옵니다.
+
+이 도구가 그 결과물입니다.
+
+---
+
+## 어떻게 동작하나요 (짧은 버전)
+
+```
+1. 한 번 설치              →  pipx install kairos-folder-audit
+2. 어디서든 실행            →  folder-audit
+3. HTML 리포트 받기         →  10개 룰, 전체 폴더, 색상 코딩
+4. (선택) 일요일 cron 등록  →  매주 자동 실행, 데스크탑에 리포트 박제
+```
+
+코드 직접 못 돌리셔도 괜찮습니다. **이 도구가 검사하는 10가지는 어떤 폴더 시스템이든 잘못될 수 있는 10가지**예요. 아래 ["이 audit이 잡는 10가지"](#이-audit이-잡는-10가지)를 직접 손으로 점검하는 체크리스트로 보셔도 됩니다.
+
+---
+
+## 이 도구가 **아닌 것**
+
+기대치 정렬:
+
+- ❌ **코드 린터 아님** — [Ruff](https://github.com/astral-sh/ruff) 쓰세요
+- ❌ **시크릿 스캐너 아님** — [Gitleaks](https://github.com/gitleaks/gitleaks) 쓰세요
+- ❌ **OSPO 컴플라이언스 도구 아님** — [repolinter](https://github.com/todogroup/repolinter) (RIP, 2026-02 archived)
+- ❌ **파일 자동 이동기 아님** — [organize](https://github.com/tfeldmann/organize) 쓰세요
+- ✅ **맞는 것:** 너무 많은 사이드 프로젝트를 굴리는 1인 메이커를 위한 주간 위생 게이트.
+
+---
 
 ## 설치
 
@@ -28,58 +68,62 @@
 # 권장 — pipx (isolated, auto-update)
 pipx install kairos-folder-audit
 
-# 대안 — uv (더 빠름, 모던)
+# 빠르고 모던한 방법
 uvx kairos-folder-audit
 
-# 제로 셋업 — 단일 파일 curl (패키지 설치 X)
+# 제로 셋업 단일 파일 (패키지 설치 X)
 curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py \
   -o folder_audit.py && python3 folder_audit.py
 ```
 
-Python 3.10+ 필요. PyYAML은 옵션 (`rules.yml` 커스터마이즈할 때만).
+Python 3.10+ 필요. PyYAML은 옵션 (커스텀 `rules.yml` 쓸 때만).
 
 ## Quick start
 
 ```bash
-# 현재 디렉토리 audit
+# 현재 폴더 audit
 folder-audit
 
-# 특정 경로 audit
+# 다른 경로 audit
 folder-audit --path ~/projects
 
-# Quick 모드 (R01/R02/R04만)
+# 가장 critical한 룰만 (빠름)
 folder-audit --quick
 
-# CLI 출력만, HTML 생략
+# HTML 생략, CLI 출력만
 folder-audit --no-html
-
-# Severity 필터
-folder-audit --severity p0
 ```
 
-HTML 리포트는 기본 `./folder-audit-report.html`에 생성됩니다. `--out path/to/report.html`로 변경 가능.
+HTML 리포트는 `./folder-audit-report.html`에 생성됩니다. 브라우저에서 열면 됩니다 — 모서리에 다크/라이트 토글 있어요.
 
-## 10개 룰
+CI에 쓸 때 exit codes: `0` clean · `1` critical 발견 (P0) · `2` action item 발견 (P1).
 
-| ID  | Severity | 제목                                        | 무엇을 잡는가                                                |
-| --- | -------- | ------------------------------------------- | ----------------------------------------------------------- |
-| R01 | P1       | 빈 폴더                                     | 파일 0개 + 하위 디렉토리 0개                                |
-| R02 | P2       | Dormant 폴더 (README-only, 14일+ 변경 없음) | 잊혀진 프로젝트: README 1개만 있고 다른 활동 없음           |
-| R03 | P2       | 상위 폴더 README 누락                       | `README.md` 없는 상위 디렉토리 (화이트리스트 설정 가능)     |
-| R04 | P1       | 중복 파일 (MD5 해시 충돌)                   | 트리 전체에서 동일 내용 텍스트 파일                         |
-| R05 | P1       | Misplaced 루트 `*.md` (YYYYMMDD-* 패턴)     | 날짜-prefix 노트가 `reports/` 대신 repo 루트에 흩어짐       |
-| R06 | P2       | Experiments 슬러그 컨벤션                   | `experiments/<slug>-<NN>` 강제 (설정 가능)                  |
-| R07 | P2       | 거대 파일 (5MB+, `output/` `input/` 제외)   | 스토리지나 gitignore에 가야 할 바이너리                     |
-| R08 | P1       | 화이트리스트 외 루트 파일                   | `approved_root_files`에 없는 repo 루트 파일                 |
-| R09 | P3       | Untracked git 누적 (10건+)                  | git status 오염 리스크                                      |
-| R10 | P0       | `.env` 보호 게이트                          | `.gitignore`로 보호되지 않는 `.env` 파일                    |
+---
+
+## 이 audit이 잡는 10가지
+
+도구를 설치하지 않더라도, 이 리스트 자체가 가치입니다. 폴더 시스템이 조용히 무너지는 10가지 방식:
+
+| ID  | Sev | 무엇을 잡는가                                  | 흔한 사연                                                        |
+| --- | --- | --------------------------------------------- | ---------------------------------------------------------------- |
+| R01 | P1  | **빈 폴더** — 파일 0개, 하위 0개               | "2023년에 만들고 한 번도 안 쓴 폴더"                            |
+| R02 | P2  | **Dormant 폴더** — README만, 14일+ 변경 없음   | "시작해서 README만 쓰고 방치한 프로젝트"                        |
+| R03 | P2  | **README 누락**                                | "이 폴더 뭐 하던 거였지? 저도 기억 안 남"                       |
+| R04 | P1  | **중복 파일** — MD5 해시 충돌                  | "왜 `notes.md`가 3군데에 똑같이 박혀있지?"                      |
+| R05 | P1  | **Misplaced 루트 `.md`** — YYYYMMDD-* 패턴     | "데일리 노트가 프로젝트 루트에 흩어짐"                          |
+| R06 | P2  | **슬러그 컨벤션** — `experiments/<slug>-<NN>`  | "정렬 안 되는 랜덤 이름의 실험 폴더"                            |
+| R07 | P2  | **거대 파일** — 5MB+, `output/` `input/` 제외  | "300MB asset이 git에 박혀있는 줄 몰랐음"                        |
+| R08 | P1  | **화이트리스트 외 루트 파일**                  | "repo 루트에 랜덤 `.zip` 파일"                                  |
+| R09 | P3  | **Untracked git 누적** — 10건+                 | "git status가 더 이상 읽을 수 없는 상태"                        |
+| R10 | P0  | **`.env` 보호** — gitignore 커버리지           | "잠깐, 6개월 전에 API 키 커밋한 거 아니지?"                     |
 
 Severity 범례: **P0** critical · **P1** action · **P2** advisory · **P3** info.
-Exit codes: `0` clean · `1` P0 발견 · `2` P1 발견 (P2/P3는 fail X).
+
+---
 
 ## 설정
 
-모든 룰은 `rules.yml`에 외부화되어 있습니다 — 스크립트 옆에 복사한 뒤 `--rules rules.yml` 전달:
+모든 룰은 `rules.yml`에 외부화돼 있습니다. 스크립트 옆에 복사하고, 편집하고, `--rules rules.yml` 전달:
 
 ```yaml
 rules:
@@ -87,12 +131,12 @@ rules:
     severity: P2
     title: "Dormant folders"
     enabled: true
-    days_threshold: 21       # 14 → 21로 변경
+    days_threshold: 21        # 14에서 21로 — 본인한테 여유 주기
 
   - id: R07
     severity: P2
     title: "Large files"
-    enabled: false           # 이 repo에선 비활성화
+    enabled: false            # 이 repo에선 비활성화
     size_bytes: 5000000
 
 exclude_dirs:
@@ -103,7 +147,7 @@ exclude_dirs:
 approved_root_files:
   - README.md
   - CHANGELOG.md
-  - my-tool.config.json     # 본인 프로젝트의 루트 파일 추가
+  - my-tool.config.json       # 본인 프로젝트 루트 파일 추가
 ```
 
 커스텀 설정으로 실행:
@@ -112,9 +156,13 @@ approved_root_files:
 folder-audit --rules ./rules.yml --path ~/projects
 ```
 
-## 일요일 06시 cron (macOS launchd)
+---
 
-제가 실제로 쓰는 방식. `~/Library/LaunchAgents/com.user.folder-audit.plist`에 박제:
+## 일요일 06:00 cron (제가 실제로 쓰는 방식)
+
+한 번 돌려보는 audit은 호기심에 그칩니다. **매주 일요일 6시에 자동으로 도는 audit**이 습관을 바꿔요.
+
+**macOS (launchd)**: `~/Library/LaunchAgents/com.user.folder-audit.plist`에 박제:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -139,49 +187,63 @@ folder-audit --rules ./rules.yml --path ~/projects
 </plist>
 ```
 
-`launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist`로 등록.
+등록:
 
-Linux는 crontab:
+```bash
+launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
+```
+
+**Linux (crontab):**
 
 ```cron
 0 6 * * 0  /usr/local/bin/folder-audit --path ~/projects --out ~/folder-audit.html
 ```
 
-## 왜 만들었나
+이제 일요일 아침에 책상 앞에 앉으면, 리포트가 이미 데스크탑에 있어요. 확인하는 걸 기억할 필요 없어요. 측정해버린 건 못 본 척할 수 없어요.
 
-이런 경험 있으셨다면:
-- 사이드 프로젝트 어느 repo가 마지막이었는지 기억 안 남
-- 같은 `notes.md`가 3개 폴더에 4번 복제됨
-- 6개월 전에 커밋한 `.env` 파일 발견
-- 300MB asset이 git에 박혀있는 걸 나중에 발견
+---
 
-…이게 네 가지 모두 커지기 전에 잡아내는 일요일 아침 게이트입니다.
+## 로드맵
 
-## 로드맵 (v0.2+)
+외부 검증 기반 (전체 리서치: [research/20260519-deep-folder-audit-launch.md](https://github.com/sunyoung-lee/kairosai/blob/main/research/20260519-deep-folder-audit-launch.md)):
 
-외부 검증 리서치 기반으로 향후 버전 계획:
+- **v0.2**
+  - **R11** 시크릿 콘텐츠 스캔 (P0) — `.env`를 넘어서 `.md`·`.py`·`.json` 본문의 AWS key / private key / Slack webhook (Gitleaks 스타일 정규식)
+  - **R12** 깨진 심볼릭 링크 (P2) — `find -xtype l` 동등
+  - **R13** 대소문자 충돌 (P1) — macOS↔Linux 배포 안전성
+  - CVSS/SonarQube 산업 표준 정합 severity 재매핑
+- **v0.3**
+  - `pre-commit` hook 통합
+  - TODO/FIXME ownership 린트
+  - JSON 출력 (CI 파이프라인용)
 
-- **R11** 시크릿 콘텐츠 스캔 (P0) — `.env`를 넘어서 `.md`·`.py`·`.json` 본문의 AWS key / private key / Slack webhook (Gitleaks 스타일 정규식)
-- **R12** 깨진 심볼릭 링크 (P2) — `find -xtype l` 동등
-- **R13** 대소문자 충돌 (P1) — macOS↔Linux 배포 안전성
-- CVSS/SonarQube 산업 표준 정합 severity 재매핑 (R01→P3, R04→P2, R05→P2)
-- TODO/FIXME ownership 린트
-- `pre-commit` hook 통합
+---
 
 ## 기여
 
-이슈와 PR 환영합니다. 단일 파일 스크립트 (~400 줄) — fork·adapt 쉽습니다.
+단일 ~400 줄 파일입니다. fork·adapt 쉽습니다.
 
 ```bash
 git clone https://github.com/sunyoung-lee/kairos-folder-audit
 cd kairos-folder-audit
-python3 folder_audit.py --path .   # dogfood
+python3 folder_audit.py --path .
 ```
+
+이슈와 PR 환영합니다.
 
 ## 라이센스
 
 [MIT](./LICENSE) © 2026 Sunny Lee
 
+---
+
 ## Background
 
-[kairos](https://instagram.com/sun.young.0207) 도구 셋의 일부 — 1인 인디 메이커로 35개 이상 사이드 프로젝트를 굴리는 개인 하네스. 더 큰 시스템이 궁금하거나 빌드 과정을 따라가고 싶으면 [Instagram](https://instagram.com/sun.young.0207)에서 프로세스 영상 확인하세요.
+[kairos](https://instagram.com/sun.young.0207) 도구 셋의 일부 — 35개 이상 사이드 프로젝트를 1인으로 굴리는 인디 메이커의 개인 하네스입니다.
+
+이 시스템이 어떻게 돌아가는지 궁금하시거나, 빌드 과정을 보고 싶거나, 혼자서 이 정도 굴리는 게 실제로 어떤지 보고 싶으시면:
+
+- 📷 Instagram — [@sun.young.0207](https://instagram.com/sun.young.0207)
+- 🧵 Threads — [@sun.young.0207](https://threads.net/@sun.young.0207)
+
+이 도구의 발사 영상이 거기에 먼저 올라갔어요.
