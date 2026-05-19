@@ -111,11 +111,59 @@ folder-audit
 
 ## 매주 일요일 자동
 
-```cron
-0 6 * * 0  folder-audit --path ~/projects --out ~/folder-audit.html
+**cron 함정**: cron의 `PATH`가 짧고 `~` 확장도 보장 안 됨. **절대 경로 사용 필수**.
+
+먼저 `folder-audit` 위치 확인:
+
+```bash
+which folder-audit
+# 예: /Users/YOU/.local/bin/folder-audit
 ```
 
-한 번 세팅하면 끝. 매주 일요일 06시에 데스크탑에 리포트가 떨어집니다. 직접 챙길 필요 없음.
+그 다음 crontab (Linux / macOS):
+
+```cron
+0 6 * * 0  /Users/YOU/.local/bin/folder-audit --path /Users/YOU/projects --out /Users/YOU/Desktop/folder-audit.html --no-open
+```
+
+`/Users/YOU`는 본인 홈 디렉토리, `projects`는 검사할 폴더로 교체.
+
+**macOS 추천 — launchd** (cron보다 native):
+
+`~/Library/LaunchAgents/com.user.folder-audit.plist`에 저장:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.user.folder-audit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOU/.local/bin/folder-audit</string>
+    <string>--path</string><string>/Users/YOU/projects</string>
+    <string>--out</string><string>/Users/YOU/Desktop/folder-audit.html</string>
+    <string>--no-open</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>6</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+</dict>
+</plist>
+```
+
+등록:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
+```
+
+`--no-open`은 새벽 6시에 브라우저 자동으로 뜨지 않게 함. Desktop에 HTML 파일만 떨어집니다.
+
+한 번 세팅하면 끝. 매주 일요일 06시 자동 실행. 직접 챙길 필요 없음.
 
 ## 라이센스
 

@@ -109,11 +109,57 @@ The real win: set up the [Sunday cron](#auto-every-sunday) below. Audit runs its
 
 ## Auto every Sunday
 
-```cron
-0 6 * * 0  folder-audit --path ~/projects --out ~/folder-audit.html
+**Cron gotcha**: cron's `PATH` is minimal and `~` may not expand. Use absolute paths.
+
+Find your `folder-audit` location first:
+
+```bash
+which folder-audit
+# e.g. /Users/YOU/.local/bin/folder-audit
 ```
 
-Set this once. Report lands on your desktop every Sunday 6 AM. Stop remembering.
+Then crontab (Linux / macOS):
+
+```cron
+0 6 * * 0  /Users/YOU/.local/bin/folder-audit --path /Users/YOU/projects --out /Users/YOU/Desktop/folder-audit.html --no-open
+```
+
+Replace `/Users/YOU` with your home, and `projects` with the folder you want audited.
+
+**macOS recommended — launchd** (more native than cron):
+
+Save as `~/Library/LaunchAgents/com.user.folder-audit.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.user.folder-audit</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOU/.local/bin/folder-audit</string>
+    <string>--path</string><string>/Users/YOU/projects</string>
+    <string>--out</string><string>/Users/YOU/Desktop/folder-audit.html</string>
+    <string>--no-open</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key><integer>0</integer>
+    <key>Hour</key><integer>6</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+</dict>
+</plist>
+```
+
+Load it:
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
+```
+
+Either way, set this once. Report lands on your Desktop every Sunday 6 AM. Stop remembering.
 
 ## License
 
