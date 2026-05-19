@@ -9,15 +9,29 @@
 ## Install
 
 ```bash
-# Recommended
 pipx install git+https://github.com/sunyoung-lee/kairos-folder-audit.git
+```
 
-# Or uvx (no install)
+**Don't have pipx yet?**
+
+| OS | Command |
+| --- | --- |
+| macOS | `brew install pipx && pipx ensurepath` |
+| Linux (apt) | `sudo apt install pipx && pipx ensurepath` |
+| Linux (dnf) | `sudo dnf install pipx && pipx ensurepath` |
+| Windows | `py -m pip install --user pipx && py -m pipx ensurepath` |
+
+**Alternatives** (no pipx needed):
+
+```bash
+# uvx (faster, modern)
 uvx --from git+https://github.com/sunyoung-lee/kairos-folder-audit.git folder-audit
 
-# Or single-file (zero setup)
+# Zero-setup single file (Python 3.10+ only)
 curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py -o folder_audit.py && python3 folder_audit.py
 ```
+
+On Windows PowerShell, replace `curl` with `Invoke-WebRequest -OutFile folder_audit.py <url>`.
 
 ## Use
 
@@ -25,7 +39,7 @@ curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/mai
 folder-audit
 ```
 
-Generates `./folder-audit-report.html` and **auto-opens it in your browser**. Detects language from `$LANG` (Korean speakers get Korean output automatically).
+Same command on every OS. Generates `./folder-audit-report.html` and **auto-opens** in your default browser (macOS `open`, Linux `xdg-open`, Windows default app). Detects language from `$LANG` — Korean speakers get Korean output automatically.
 
 Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
 
@@ -107,26 +121,18 @@ Common rule shortcuts:
 
 The real win: set up the [Sunday cron](#auto-every-sunday) below. Audit runs itself weekly, you paste into AI, move on with your week.
 
-## Auto every Sunday
+## Auto every Sunday — by OS
 
-**Cron gotcha**: cron's `PATH` is minimal and `~` may not expand. Use absolute paths.
-
-Find your `folder-audit` location first:
+Schedule a weekly audit at 06:00 Sunday. First find your binary path:
 
 ```bash
-which folder-audit
-# e.g. /Users/YOU/.local/bin/folder-audit
+which folder-audit         # macOS / Linux
+where folder-audit         # Windows (PowerShell)
 ```
 
-Then crontab (Linux / macOS):
+Use that **absolute path** below — schedulers ignore `~` and your shell's `PATH`.
 
-```cron
-0 6 * * 0  /Users/YOU/.local/bin/folder-audit --path /Users/YOU/projects --out /Users/YOU/Desktop/folder-audit.html --no-open
-```
-
-Replace `/Users/YOU` with your home, and `projects` with the folder you want audited.
-
-**macOS recommended — launchd** (more native than cron):
+### macOS — launchd (recommended)
 
 Save as `~/Library/LaunchAgents/com.user.folder-audit.plist`:
 
@@ -159,7 +165,32 @@ Load it:
 launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
 ```
 
-Either way, set this once. Report lands on your Desktop every Sunday 6 AM. Stop remembering.
+### Linux — crontab
+
+```bash
+crontab -e
+```
+
+Add:
+
+```cron
+0 6 * * 0  /home/YOU/.local/bin/folder-audit --path /home/YOU/projects --out /home/YOU/folder-audit.html --no-open
+```
+
+### Windows — Task Scheduler
+
+PowerShell (run as your user, not Admin):
+
+```powershell
+schtasks /create /sc weekly /d SUN /st 06:00 /tn "FolderAudit" `
+  /tr "C:\Users\YOU\.local\bin\folder-audit.exe --path C:\Users\YOU\projects --out C:\Users\YOU\Desktop\folder-audit.html --no-open"
+```
+
+Or use the Task Scheduler GUI (Triggers → Weekly → Sunday 06:00, Actions → Start a program → folder-audit.exe with the args above).
+
+—
+
+Set this once on whatever OS you're on. The report lands on your Desktop every Sunday 06:00. Stop remembering.
 
 ## License
 

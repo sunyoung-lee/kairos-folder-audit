@@ -9,15 +9,29 @@
 ## 설치
 
 ```bash
-# 추천
 pipx install git+https://github.com/sunyoung-lee/kairos-folder-audit.git
+```
 
-# uvx (설치 X)
+**pipx 아직 없으면 먼저 설치:**
+
+| OS | 명령 |
+| --- | --- |
+| macOS | `brew install pipx && pipx ensurepath` |
+| Linux (apt) | `sudo apt install pipx && pipx ensurepath` |
+| Linux (dnf) | `sudo dnf install pipx && pipx ensurepath` |
+| Windows | `py -m pip install --user pipx && py -m pipx ensurepath` |
+
+**대안** (pipx 없이):
+
+```bash
+# uvx (더 빠름, 모던)
 uvx --from git+https://github.com/sunyoung-lee/kairos-folder-audit.git folder-audit
 
-# 단일 파일 (제로 셋업)
+# 제로 셋업 단일 파일 (Python 3.10+만 필요)
 curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py -o folder_audit.py && python3 folder_audit.py
 ```
+
+Windows PowerShell은 `curl` 대신 `Invoke-WebRequest -OutFile folder_audit.py <url>`.
 
 ## 사용
 
@@ -25,7 +39,7 @@ curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/mai
 folder-audit
 ```
 
-실행하면 `./folder-audit-report.html` 생성 + **브라우저 자동 오픈**. `$LANG`이 `ko_KR`이면 자동으로 한국어 출력.
+OS 동일. `./folder-audit-report.html` 생성 + **브라우저 자동 오픈** (macOS `open`, Linux `xdg-open`, Windows 기본 앱). `$LANG`이 `ko_KR`이면 자동으로 한국어 출력.
 
 자동 오픈 끄기: `--no-open`. 영어 강제: `--lang en`.
 
@@ -109,26 +123,18 @@ folder-audit
 
 진짜 가치: 아래 [일요일 cron](#매주-일요일-자동) 설정. audit이 자기가 매주 돌고, AI에 paste하면 정리가 끝납니다. 챙길 게 없어집니다.
 
-## 매주 일요일 자동
+## 매주 일요일 자동 — OS별
 
-**cron 함정**: cron의 `PATH`가 짧고 `~` 확장도 보장 안 됨. **절대 경로 사용 필수**.
-
-먼저 `folder-audit` 위치 확인:
+일요일 06:00 주간 audit 등록. 먼저 binary 절대 경로 확인:
 
 ```bash
-which folder-audit
-# 예: /Users/YOU/.local/bin/folder-audit
+which folder-audit         # macOS / Linux
+where folder-audit         # Windows (PowerShell)
 ```
 
-그 다음 crontab (Linux / macOS):
+이 **절대 경로**를 아래 사용 — 스케줄러는 `~`나 본인 셸 `PATH`를 모릅니다.
 
-```cron
-0 6 * * 0  /Users/YOU/.local/bin/folder-audit --path /Users/YOU/projects --out /Users/YOU/Desktop/folder-audit.html --no-open
-```
-
-`/Users/YOU`는 본인 홈 디렉토리, `projects`는 검사할 폴더로 교체.
-
-**macOS 추천 — launchd** (cron보다 native):
+### macOS — launchd (추천)
 
 `~/Library/LaunchAgents/com.user.folder-audit.plist`에 저장:
 
@@ -161,9 +167,32 @@ which folder-audit
 launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
 ```
 
-`--no-open`은 새벽 6시에 브라우저 자동으로 뜨지 않게 함. Desktop에 HTML 파일만 떨어집니다.
+### Linux — crontab
 
-한 번 세팅하면 끝. 매주 일요일 06시 자동 실행. 직접 챙길 필요 없음.
+```bash
+crontab -e
+```
+
+추가:
+
+```cron
+0 6 * * 0  /home/YOU/.local/bin/folder-audit --path /home/YOU/projects --out /home/YOU/folder-audit.html --no-open
+```
+
+### Windows — 작업 스케줄러
+
+PowerShell (관리자 X, 본인 계정):
+
+```powershell
+schtasks /create /sc weekly /d SUN /st 06:00 /tn "FolderAudit" `
+  /tr "C:\Users\YOU\.local\bin\folder-audit.exe --path C:\Users\YOU\projects --out C:\Users\YOU\Desktop\folder-audit.html --no-open"
+```
+
+또는 작업 스케줄러 GUI (트리거 → 매주 → 일요일 06:00, 작업 → 프로그램 시작 → 위 인자).
+
+—
+
+OS 상관없이 한 번만 세팅하면 끝. 매주 일요일 06:00에 리포트가 Desktop에 떨어집니다. 챙길 필요 없음.
 
 ## 라이센스
 
