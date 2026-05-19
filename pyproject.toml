@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kairos-folder-audit"
+version = "0.1.0"
+description = "Folder hygiene health-check with 10 configurable rules + HTML report"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Sunny Lee", email = "godkrt@gmail.com" }
+]
+requires-python = ">=3.10"
+keywords = ["folder", "audit", "hygiene", "cleanup", "directory", "health", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Utilities",
+]
+dependencies = []  # works with stdlib only
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/sunyoung-lee/kairos-folder-audit"
+Repository = "https://github.com/sunyoung-lee/kairos-folder-audit"
+Issues = "https://github.com/sunyoung-lee/kairos-folder-audit/issues"
+
+[project.scripts]
+folder-audit = "folder_audit:main"
+kairos-folder-audit = "folder_audit:main"
+
+[tool.setuptools]
+py-modules = ["folder_audit"]

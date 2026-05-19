@@ -1,0 +1,102 @@
+# rules.yml — folder_audit.py 설정
+# 사용: python3 folder_audit.py --rules rules.yml
+# (PyYAML 필요: pip install pyyaml)
+
+# 검사 제외 폴더 (재귀 워크에서 스킵)
+exclude_dirs:
+  - .git
+  - node_modules
+  - .next
+  - dist
+  - build
+  - __pycache__
+  - .venv
+  - venv
+  - .pytest_cache
+  - .mypy_cache
+  - .turbo
+  - .cache
+  - coverage
+  - .vercel
+  - .netlify
+
+# 표준 하위 폴더 — README 없어도 R03 미통과 (이 폴더들은 컨벤션상 README 불필요)
+standard_child:
+  - input
+  - output
+  - scripts
+  - prompts
+  - copy
+  - templates
+  - guides
+  - rules
+  - adr
+  - src
+  - tests
+
+# 루트에 허용된 파일 — R05 / R08에서 통과
+approved_root_files:
+  - README.md
+  - CHANGELOG.md
+  - LICENSE
+  - Makefile
+  - package.json
+  - .gitignore
+  - .npmrc
+  - .env.example
+
+# 10 룰 정의 — 비활성화하려면 enabled: false
+rules:
+  - id: R01
+    severity: P1
+    title: "Empty folders (0 files, 0 subdirs)"
+    enabled: true
+
+  - id: R02
+    severity: P2
+    title: "Dormant folders (README-only, 14+ days idle)"
+    enabled: true
+    days_threshold: 14    # 변경: 일수 임계값
+
+  - id: R03
+    severity: P2
+    title: "Missing README in top-level folder"
+    enabled: true
+
+  - id: R04
+    severity: P1
+    title: "Duplicate files (MD5 hash collision)"
+    enabled: true
+
+  - id: R05
+    severity: P1
+    title: "Misplaced root *.md (YYYYMMDD-* pattern)"
+    enabled: true
+
+  - id: R06
+    severity: P2
+    title: "Experiments slug convention violation"
+    enabled: true
+    folder: experiments   # 변경: 슬러그 검사할 폴더명
+
+  - id: R07
+    severity: P2
+    title: "Large files (5MB+, outside output/input)"
+    enabled: true
+    size_bytes: 5000000   # 변경: 임계값 (bytes)
+
+  - id: R08
+    severity: P1
+    title: "Unapproved root files"
+    enabled: true
+
+  - id: R09
+    severity: P3
+    title: "Untracked git files accumulation (10+)"
+    enabled: true
+    min_count: 10         # 변경: 임계 개수
+
+  - id: R10
+    severity: P0
+    title: ".env protection gate (.gitignore coverage)"
+    enabled: true
