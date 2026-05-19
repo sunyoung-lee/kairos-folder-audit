@@ -35,6 +35,25 @@ Drops an HTML report at `./folder-audit-report.html` — color-coded, dark/light
 - **Weekly auto-run** — set once, never check manually
 - **No more stress** — "did I commit `.env` 6 months ago?" never again
 
+## Who this is for
+
+- Solo indie makers running **5+ side projects** at once
+- AI pair coders shipping with **Claude Code / Cursor** daily
+- Anyone with **200+ files** across repos, Notion, or Drive
+- People who keep thinking _"what was this folder for again?"_
+
+## When to use it
+
+- **Sunday morning** — light check before the new week
+- **Before a new project** — tidy what you already have
+- **After 6 months of chaos** — bulk cleanup, see everything at once
+- **Before pushing public** — catch `.env` leaks, duplicates, large files
+- **Right after an AI pair session** — clean up leftover artifacts
+
+## Sample report
+
+![report](./docs/report-dark.png)
+
 ## The 10 checks
 
 | ID  | Sev | Catches                                          |
