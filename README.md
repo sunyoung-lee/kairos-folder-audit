@@ -70,7 +70,31 @@ Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
 | R09 | P3  | Untracked git accumulation (10+)                 |
 | R10 | P0  | `.env` protection                                |
 
-P0 critical · P1 action · P2 advisory · P3 info.
+## Severity legend
+
+- **P0 critical** — Fix immediately. Security or data-loss risk.
+- **P1 action** — Address within the week. Structural integrity or build impact.
+- **P2 advisory** — Address within the month. Maintainability and clarity.
+- **P3 info** — Awareness only. No urgent action needed.
+- **Clean** — Rule found nothing in this area. Healthy.
+
+## What to do after a run
+
+Open the report, and for each finding choose one of:
+
+1. **Fix now** (recommended for P0 / P1) — apply the suggested action shown in the report
+2. **Archive as advisory** (P2 / P3) — leave for next week's batch cleanup
+3. **Whitelist** — if it's a false positive (e.g., a folder you intentionally keep empty), add it to `rules.yml`
+
+Quick fixes by rule:
+
+- **R01 empty folder** → `rmdir <path>/` or add `.gitkeep` if intentional
+- **R03 missing README** → add a 1-line `README.md`, or add the folder to `standard_child` in `rules.yml`
+- **R04 duplicate** → keep one canonical, `git rm` the others or stub them with a `moved_to:` pointer
+- **R05 misplaced `.md`** → `git mv <file> reports/<file>` or `research/<file>`
+- **R10 `.env` exposed** → `echo ".env" >> .gitignore && git rm --cached .env` immediately
+
+After the first cleanup, set up the [Sunday cron](#auto-every-sunday) below. That's the real win — audit becomes background, not a chore.
 
 ## Auto every Sunday
 

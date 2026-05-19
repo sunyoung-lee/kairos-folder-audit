@@ -72,7 +72,31 @@ folder-audit
 | R09 | P3  | Untracked git 누적 (10건+)                    |
 | R10 | P0  | `.env` 보호                                   |
 
-P0 critical · P1 action · P2 advisory · P3 info.
+## 심각도 안내
+
+- **P0 차단** — 즉시 수정. 보안 또는 데이터 손실 위험.
+- **P1 액션** — 이번 주 안에 처리. 구조 무결성 / 빌드 영향.
+- **P2 권고** — 이번 달 안에 처리. 유지보수성 / 명료성.
+- **P3 안내** — 인지만. 급한 액션 X.
+- **Clean** — 룰이 잡은 게 없음. 해당 영역 건강.
+
+## 결과 받으면 무엇을 하나
+
+리포트를 열고, 각 finding에 대해 셋 중 하나 선택:
+
+1. **즉시 수정** (P0 / P1 권장) — 리포트에 표시된 추천 액션 그대로 실행
+2. **advisory로 박제** (P2 / P3) — 다음 주 일괄 정리로 미룸
+3. **화이트리스트 등록** — false positive (예: 의도적으로 빈 폴더)는 `rules.yml`에 추가
+
+룰별 빠른 수정:
+
+- **R01 빈 폴더** → `rmdir <경로>/`, 의도된 거면 `.gitkeep` 박제
+- **R03 README 없음** → 1줄 `README.md` 추가, 또는 `rules.yml`의 `standard_child`에 폴더명 추가
+- **R04 중복** → 1개 권위본 유지, 나머지는 `git rm` 또는 `moved_to:` stub
+- **R05 misplaced `.md`** → `git mv <파일> reports/<파일>` 또는 `research/<파일>`
+- **R10 `.env` 노출** → `echo ".env" >> .gitignore && git rm --cached .env` 즉시 처리
+
+첫 정리가 끝나면 아래 [일요일 cron](#매주-일요일-자동)을 설정하세요. 그게 진짜 가치예요 — audit이 백그라운드가 되고, 챙겨야 할 일이 아니게 됩니다.
 
 ## 매주 일요일 자동
 

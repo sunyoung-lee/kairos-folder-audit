@@ -9,7 +9,7 @@ description = "Folder hygiene health-check with 10 configurable rules + HTML rep
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "Sunny Lee", email = "godkrt@gmail.com" }
+    { name = "Sunny Lee" }
 ]
 requires-python = ">=3.10"
 keywords = ["folder", "audit", "hygiene", "cleanup", "directory", "health", "cli"]
