@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -41,6 +42,99 @@ except ImportError:
 
 NOW_LABEL = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 TODAY = datetime.now().strftime("%Y%m%d")
+
+# ─── i18n ──────────────────────────────────────────────────────────────
+LOCALES = {
+    "en": {
+        "report_title": "Folder Audit Report",
+        "report_sub":   "{now} · root: {root}",
+        "stat_p0":      "P0 critical",
+        "stat_p1":      "P1 action",
+        "stat_p2":      "P2 advisory",
+        "stat_p3":      "P3 info",
+        "stat_clean":   "Clean rules",
+        "stat_total":   "Total findings",
+        "lab_finding":  "finding",
+        "lab_findings": "findings",
+        "lab_clean":    "✓ clean",
+        "lab_passed":   "0 findings — passed",
+        "footer":       "kairos-folder-audit · MIT License",
+        "cli_header":   "🔎  folder audit · {now}",
+        "cli_total":    "Total: {n} findings",
+        "cli_html":     "✓ HTML: {path}",
+        "cli_open":     "  open {path}",
+        "cli_more":     "      … and {n} more",
+    },
+    "ko": {
+        "report_title": "폴더 감사 리포트",
+        "report_sub":   "{now} · 경로: {root}",
+        "stat_p0":      "P0 차단",
+        "stat_p1":      "P1 액션",
+        "stat_p2":      "P2 권고",
+        "stat_p3":      "P3 안내",
+        "stat_clean":   "Clean 룰",
+        "stat_total":   "총 finding",
+        "lab_finding":  "건",
+        "lab_findings": "건",
+        "lab_clean":    "✓ 통과",
+        "lab_passed":   "0건 — 통과",
+        "footer":       "kairos-folder-audit · MIT License",
+        "cli_header":   "🔎  폴더 감사 · {now}",
+        "cli_total":    "총: {n}건",
+        "cli_html":     "✓ HTML 생성: {path}",
+        "cli_open":     "  open {path}",
+        "cli_more":     "      … 외 {n}건",
+    },
+}
+
+RULE_TITLES = {
+    "en": {
+        "R01": "Empty folders (0 files, 0 subdirs)",
+        "R02": "Dormant folders (README-only, 14+ days idle)",
+        "R03": "Missing README in top-level folder",
+        "R04": "Duplicate files (MD5 hash collision)",
+        "R05": "Misplaced root *.md (YYYYMMDD-* pattern)",
+        "R06": "Experiments slug convention violation",
+        "R07": "Large files (5MB+, outside output/input)",
+        "R08": "Unapproved root files",
+        "R09": "Untracked git files accumulation (10+)",
+        "R10": ".env protection gate (.gitignore coverage)",
+    },
+    "ko": {
+        "R01": "빈 폴더 (파일 0개, 하위 0개)",
+        "R02": "Dormant 폴더 (README만, 14일+ 변경 없음)",
+        "R03": "상위 폴더 README 누락",
+        "R04": "중복 파일 (MD5 해시 충돌)",
+        "R05": "Misplaced 루트 *.md (YYYYMMDD-* 패턴)",
+        "R06": "Experiments 슬러그 컨벤션 위반",
+        "R07": "거대 파일 (5MB+, output/input 제외)",
+        "R08": "화이트리스트 외 루트 파일",
+        "R09": "Untracked git 누적 (10건+)",
+        "R10": ".env 보호 게이트 (.gitignore 커버리지)",
+    },
+}
+
+
+def detect_lang() -> str:
+    """Auto-detect language from $LANG / $LC_ALL. Defaults to en."""
+    raw = (os.environ.get("LANG", "") or os.environ.get("LC_ALL", "")).lower()
+    if raw.startswith("ko"):
+        return "ko"
+    return "en"
+
+
+def open_in_browser(path: Path) -> None:
+    """Open HTML in default browser. Silent on failure."""
+    try:
+        system = platform.system()
+        if system == "Darwin":
+            subprocess.run(["open", str(path)], check=False)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", str(path)], check=False, stderr=subprocess.DEVNULL)
+        elif system == "Windows":
+            os.startfile(str(path))  # type: ignore[attr-defined]
+    except Exception:
+        pass
 
 # ─── Default config (used when rules.yml absent) ──────────────────────
 DEFAULT_CONFIG = {
@@ -72,14 +166,26 @@ DEFAULT_CONFIG = {
 }
 
 # ─── Config loader ─────────────────────────────────────────────────────
-def load_config(rules_path: Path | None) -> dict:
+def load_config(rules_path: Path | None, lang: str = "en") -> dict:
     if rules_path and rules_path.exists():
         if not HAS_YAML:
             print("⚠  PyYAML not installed; using built-in defaults. `pip install pyyaml` for custom rules.", file=sys.stderr)
-            return DEFAULT_CONFIG
-        with open(rules_path) as f:
-            return yaml.safe_load(f) or DEFAULT_CONFIG
-    return DEFAULT_CONFIG
+            cfg = dict(DEFAULT_CONFIG)
+        else:
+            with open(rules_path) as f:
+                cfg = yaml.safe_load(f) or DEFAULT_CONFIG
+    else:
+        cfg = {k: (list(v) if isinstance(v, list) else v) for k, v in DEFAULT_CONFIG.items()}
+        cfg["rules"] = [dict(r) for r in DEFAULT_CONFIG["rules"]]
+
+    # Apply localized rule titles (only when using built-in defaults; user-provided
+    # rules.yml titles are kept as-is — user is responsible for their own i18n)
+    if not (rules_path and rules_path.exists()) and lang in RULE_TITLES:
+        titles = RULE_TITLES[lang]
+        for rule in cfg["rules"]:
+            if rule["id"] in titles:
+                rule["title"] = titles[rule["id"]]
+    return cfg
 
 # ─── Rule implementations ──────────────────────────────────────────────
 def walk_dirs(root: Path, exclude_dirs: set[str]):
@@ -426,15 +532,15 @@ HTML_TEMPLATE = """<!doctype html>
 </head>
 <body>
 <button class="theme-toggle" onclick="cycleTheme()">🌓 Auto</button>
-<h1>Folder Audit Report</h1>
+<h1>{L_TITLE}</h1>
 <div class="sub">{NOW} · root: <code>{ROOT}</code></div>
 <div class="summary">
-  <div class="stat p0"><div class="n">{P0}</div><div class="l">P0 critical</div></div>
-  <div class="stat p1"><div class="n">{P1}</div><div class="l">P1 action</div></div>
-  <div class="stat p2"><div class="n">{P2}</div><div class="l">P2 advisory</div></div>
-  <div class="stat p3"><div class="n">{P3}</div><div class="l">P3 info</div></div>
-  <div class="stat clean"><div class="n">{CLEAN}</div><div class="l">Clean rules</div></div>
-  <div class="stat"><div class="n">{TOTAL}</div><div class="l">Total findings</div></div>
+  <div class="stat p0"><div class="n">{P0}</div><div class="l">{L_P0}</div></div>
+  <div class="stat p1"><div class="n">{P1}</div><div class="l">{L_P1}</div></div>
+  <div class="stat p2"><div class="n">{P2}</div><div class="l">{L_P2}</div></div>
+  <div class="stat p3"><div class="n">{P3}</div><div class="l">{L_P3}</div></div>
+  <div class="stat clean"><div class="n">{CLEAN}</div><div class="l">{L_CLEAN}</div></div>
+  <div class="stat"><div class="n">{TOTAL}</div><div class="l">{L_TOTAL}</div></div>
 </div>
 {RULES_HTML}
 <div class="footer">
@@ -445,7 +551,8 @@ HTML_TEMPLATE = """<!doctype html>
 """
 
 
-def render_html(results: dict, root: Path, cfg: dict) -> str:
+def render_html(results: dict, root: Path, cfg: dict, lang: str = "en") -> str:
+    L = LOCALES.get(lang, LOCALES["en"])
     p0 = sum(len(r["findings"]) for r in results.values() if r["sev"] == "P0")
     p1 = sum(len(r["findings"]) for r in results.values() if r["sev"] == "P1")
     p2 = sum(len(r["findings"]) for r in results.values() if r["sev"] == "P2")
@@ -462,7 +569,7 @@ def render_html(results: dict, root: Path, cfg: dict) -> str:
         fs = r["findings"]
         sev_lo = r["sev"].lower()
         if not fs:
-            parts.append(f"""<div class="rule"><div class="rule-h"><div><span class="rule-id">{rid}</span> <span class="sev {sev_lo}">{r["sev"]}</span> {escape(r["title"])}</div><div class="count">✓ clean</div></div><div class="clean">0 findings — passed</div></div>""")
+            parts.append(f"""<div class="rule"><div class="rule-h"><div><span class="rule-id">{rid}</span> <span class="sev {sev_lo}">{r["sev"]}</span> {escape(r["title"])}</div><div class="count">{L["lab_clean"]}</div></div><div class="clean">{L["lab_passed"]}</div></div>""")
             continue
         f_html = "".join(
             f'<div class="f"><div class="f-path">{escape(f["path"])}</div>'
@@ -470,16 +577,27 @@ def render_html(results: dict, root: Path, cfg: dict) -> str:
             f'<div class="f-action">→ {escape(f["action"])}</div></div>'
             for f in fs
         )
-        parts.append(f"""<div class="rule"><div class="rule-h"><div><span class="rule-id">{rid}</span> <span class="sev {sev_lo}">{r["sev"]}</span> {escape(r["title"])}</div><div class="count">{len(fs)} finding{"s" if len(fs) != 1 else ""}</div></div><div class="findings">{f_html}</div></div>""")
+        count_label = L["lab_finding"] if len(fs) == 1 else L["lab_findings"]
+        if lang == "ko":
+            count_str = f'{len(fs)}{count_label}'
+        else:
+            count_str = f'{len(fs)} {count_label}'
+        parts.append(f"""<div class="rule"><div class="rule-h"><div><span class="rule-id">{rid}</span> <span class="sev {sev_lo}">{r["sev"]}</span> {escape(r["title"])}</div><div class="count">{count_str}</div></div><div class="findings">{f_html}</div></div>""")
     return HTML_TEMPLATE.format(
         NOW=NOW_LABEL, ROOT=str(root),
         P0=p0, P1=p1, P2=p2, P3=p3, CLEAN=clean, TOTAL=total,
+        L_TITLE=L["report_title"],
+        L_P0=L["stat_p0"], L_P1=L["stat_p1"], L_P2=L["stat_p2"], L_P3=L["stat_p3"],
+        L_CLEAN=L["stat_clean"], L_TOTAL=L["stat_total"],
         RULES_HTML="\n".join(parts),
     )
 
 
-def print_cli(results: dict, cfg: dict) -> None:
-    print(f"\n🔎  folder audit · {NOW_LABEL}\n")
+def print_cli(results: dict, cfg: dict, lang: str = "en") -> None:
+    L = LOCALES.get(lang, LOCALES["en"])
+    print()
+    print(L["cli_header"].format(now=NOW_LABEL))
+    print()
     total = 0
     for rule in cfg["rules"]:
         rid = rule["id"]
@@ -489,42 +607,59 @@ def print_cli(results: dict, cfg: dict) -> None:
         if not r["findings"]:
             print(f"  ✓ {rid} [{r['sev']}] {r['title']}")
             continue
-        print(f"  ⚠ {rid} [{r['sev']}] {r['title']}  ({len(r['findings'])} findings)")
+        n = len(r["findings"])
+        unit = L["lab_finding"] if n == 1 else L["lab_findings"]
+        sep = "" if lang == "ko" else " "
+        print(f"  ⚠ {rid} [{r['sev']}] {r['title']}  ({n}{sep}{unit})")
         for f in r["findings"][:5]:
             print(f"      · {f['path']}: {f['msg']}")
-        if len(r["findings"]) > 5:
-            print(f"      … and {len(r['findings']) - 5} more")
-        total += len(r["findings"])
-    print(f"\nTotal: {total} findings\n")
+        if n > 5:
+            print(L["cli_more"].format(n=n - 5))
+        total += n
+    print()
+    print(L["cli_total"].format(n=total))
+    print()
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Folder hygiene health-check (10 configurable rules)")
     ap.add_argument("--path", type=Path, default=Path.cwd(), help="Path to audit (default: cwd)")
     ap.add_argument("--rules", type=Path, default=None, help="Custom rules.yml (default: built-in)")
+    ap.add_argument("--lang", choices=["auto", "en", "ko"], default="auto",
+                    help="Output language: auto (from $LANG) / en / ko (default: auto)")
     ap.add_argument("--quick", action="store_true", help="Quick mode: R01/R02/R04 only")
     ap.add_argument("--severity", choices=["p0", "p1", "p2", "p3"], help="Filter by severity")
     ap.add_argument("--out", type=Path, default=None, help="HTML output path (default: ./folder-audit-report.html)")
     ap.add_argument("--no-html", action="store_true", help="Skip HTML, CLI only")
     ap.add_argument("--no-cli", action="store_true", help="Skip CLI, HTML only")
+    ap.add_argument("--no-open", action="store_true", help="Don't auto-open HTML in browser")
     args = ap.parse_args()
+
+    lang = detect_lang() if args.lang == "auto" else args.lang
 
     root = args.path.expanduser().resolve()
     if not root.exists():
         print(f"❌ Path not found: {root}", file=sys.stderr)
         sys.exit(1)
 
-    cfg = load_config(args.rules)
+    cfg = load_config(args.rules, lang=lang)
     results = run_all_rules(root, cfg, quick=args.quick, severity_filter=args.severity)
+    L = LOCALES.get(lang, LOCALES["en"])
 
+    out: Path | None = None
     if not args.no_html:
         out = args.out or (Path.cwd() / "folder-audit-report.html")
-        html = render_html(results, root, cfg)
+        html = render_html(results, root, cfg, lang=lang)
         out.write_text(html, encoding="utf-8")
-        print(f"✓ HTML: {out}\n  open {out}")
+        print(L["cli_html"].format(path=out))
+        print(L["cli_open"].format(path=out))
 
     if not args.no_cli:
-        print_cli(results, cfg)
+        print_cli(results, cfg, lang=lang)
+
+    # Auto-open browser (default ON, --no-open to disable)
+    if out is not None and not args.no_open:
+        open_in_browser(out)
 
     p0 = sum(len(r["findings"]) for r in results.values() if r["sev"] == "P0")
     p1 = sum(len(r["findings"]) for r in results.values() if r["sev"] == "P1")

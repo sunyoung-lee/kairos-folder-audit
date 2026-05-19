@@ -25,7 +25,9 @@ curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/mai
 folder-audit
 ```
 
-Drops an HTML report at `./folder-audit-report.html` — color-coded, dark/light toggle, shareable.
+Generates `./folder-audit-report.html` and **auto-opens it in your browser**. Detects language from `$LANG` (Korean speakers get Korean output automatically).
+
+Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
 
 ## What you get
 

@@ -25,7 +25,9 @@ curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/mai
 folder-audit
 ```
 
-`./folder-audit-report.html` 에 HTML 리포트가 생성됩니다 — 색상 코딩, 다크/라이트 토글, 공유 가능.
+실행하면 `./folder-audit-report.html` 생성 + **브라우저 자동 오픈**. `$LANG`이 `ko_KR`이면 자동으로 한국어 출력.
+
+자동 오픈 끄기: `--no-open`. 영어 강제: `--lang en`.
 
 ## 받는 가치
 
@@ -51,7 +53,9 @@ folder-audit
 
 ## 리포트 예시
 
-![report](./docs/report-dark.png)
+![report](./docs/report-dark-ko.png)
+
+`$LANG`이 `ko_KR`이면 자동으로 한국어 출력. 또는 `--lang ko` 명시.
 
 ## 10가지 체크
 
