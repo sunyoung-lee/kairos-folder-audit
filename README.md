@@ -80,21 +80,32 @@ Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
 
 ## What to do after a run
 
-Open the report, and for each finding choose one of:
+The audit hands you a report. The cleanup is one prompt away.
 
-1. **Fix now** (recommended for P0 / P1) — apply the suggested action shown in the report
-2. **Archive as advisory** (P2 / P3) — leave for next week's batch cleanup
-3. **Whitelist** — if it's a false positive (e.g., a folder you intentionally keep empty), add it to `rules.yml`
+**With Claude Code / Cursor / any AI agent** — the recommended flow:
 
-Quick fixes by rule:
+1. Run `folder-audit` (CLI output stays in your terminal)
+2. Copy the CLI output, or drag the HTML report into your AI session
+3. Prompt: _"Fix the P0 and P1 findings. Show me each change before applying."_
+4. Review → approve → done.
+
+That's the whole loop. **Audit → AI → cleanup.** No manual command-by-command.
+
+**Or manually** if you want hands-on control:
+
+- **P0** → fix immediately (security / data risk)
+- **P1** → fix within the week (structural)
+- **P2 / P3** → batch for next Sunday's cron
+
+Common rule shortcuts:
 
 - **R01 empty folder** → `rmdir <path>/` or add `.gitkeep` if intentional
-- **R03 missing README** → add a 1-line `README.md`, or add the folder to `standard_child` in `rules.yml`
-- **R04 duplicate** → keep one canonical, `git rm` the others or stub them with a `moved_to:` pointer
-- **R05 misplaced `.md`** → `git mv <file> reports/<file>` or `research/<file>`
-- **R10 `.env` exposed** → `echo ".env" >> .gitignore && git rm --cached .env` immediately
+- **R03 missing README** → add a 1-line `README.md`, or whitelist the folder via `standard_child` in `rules.yml`
+- **R04 duplicate** → keep one canonical, `git rm` the rest
+- **R05 misplaced `.md`** → `git mv <file> reports/<file>`
+- **R10 `.env` exposed** → `echo ".env" >> .gitignore && git rm --cached .env`
 
-After the first cleanup, set up the [Sunday cron](#auto-every-sunday) below. That's the real win — audit becomes background, not a chore.
+The real win: set up the [Sunday cron](#auto-every-sunday) below. Audit runs itself weekly, you paste into AI, move on with your week.
 
 ## Auto every Sunday
 

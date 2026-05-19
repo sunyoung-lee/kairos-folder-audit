@@ -82,21 +82,32 @@ folder-audit
 
 ## 결과 받으면 무엇을 하나
 
-리포트를 열고, 각 finding에 대해 셋 중 하나 선택:
+리포트가 나오면, 정리는 프롬프트 한 줄로 끝나요.
 
-1. **즉시 수정** (P0 / P1 권장) — 리포트에 표시된 추천 액션 그대로 실행
-2. **advisory로 박제** (P2 / P3) — 다음 주 일괄 정리로 미룸
-3. **화이트리스트 등록** — false positive (예: 의도적으로 빈 폴더)는 `rules.yml`에 추가
+**Claude Code / Cursor / 다른 AI 에이전트와** — 추천 흐름:
 
-룰별 빠른 수정:
+1. `folder-audit` 실행 (CLI 출력이 터미널에 남음)
+2. CLI 출력 복사, 또는 HTML 리포트를 AI 세션에 드래그
+3. 프롬프트: _"P0와 P1 finding 수정해줘. 변경 전에 각각 보여주고."_
+4. 검토 → 승인 → 끝.
+
+이게 전체 루프예요. **Audit → AI → 정리.** 명령어 하나하나 직접 칠 필요 없음.
+
+**또는 직접 정리** 하고 싶으면:
+
+- **P0** → 즉시 (보안 / 데이터 리스크)
+- **P1** → 이번 주 안에 (구조)
+- **P2 / P3** → 다음 일요일 cron에 일괄
+
+룰별 빠른 명령:
 
 - **R01 빈 폴더** → `rmdir <경로>/`, 의도된 거면 `.gitkeep` 박제
-- **R03 README 없음** → 1줄 `README.md` 추가, 또는 `rules.yml`의 `standard_child`에 폴더명 추가
-- **R04 중복** → 1개 권위본 유지, 나머지는 `git rm` 또는 `moved_to:` stub
-- **R05 misplaced `.md`** → `git mv <파일> reports/<파일>` 또는 `research/<파일>`
-- **R10 `.env` 노출** → `echo ".env" >> .gitignore && git rm --cached .env` 즉시 처리
+- **R03 README 없음** → 1줄 `README.md` 추가, 또는 `rules.yml`의 `standard_child` 화이트리스트
+- **R04 중복** → 1개 권위본 + 나머지 `git rm`
+- **R05 misplaced `.md`** → `git mv <파일> reports/<파일>`
+- **R10 `.env` 노출** → `echo ".env" >> .gitignore && git rm --cached .env`
 
-첫 정리가 끝나면 아래 [일요일 cron](#매주-일요일-자동)을 설정하세요. 그게 진짜 가치예요 — audit이 백그라운드가 되고, 챙겨야 할 일이 아니게 됩니다.
+진짜 가치: 아래 [일요일 cron](#매주-일요일-자동) 설정. audit이 자기가 매주 돌고, AI에 paste하면 정리가 끝납니다. 챙길 게 없어집니다.
 
 ## 매주 일요일 자동
 
