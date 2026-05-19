@@ -12,26 +12,7 @@
 pipx install git+https://github.com/sunyoung-lee/kairos-folder-audit.git
 ```
 
-**Don't have pipx yet?**
-
-| OS | Command |
-| --- | --- |
-| macOS | `brew install pipx && pipx ensurepath` |
-| Linux (apt) | `sudo apt install pipx && pipx ensurepath` |
-| Linux (dnf) | `sudo dnf install pipx && pipx ensurepath` |
-| Windows | `py -m pip install --user pipx && py -m pipx ensurepath` |
-
-**Alternatives** (no pipx needed):
-
-```bash
-# uvx (faster, modern)
-uvx --from git+https://github.com/sunyoung-lee/kairos-folder-audit.git folder-audit
-
-# Zero-setup single file (Python 3.10+ only)
-curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py -o folder_audit.py && python3 folder_audit.py
-```
-
-On Windows PowerShell, replace `curl` with `Invoke-WebRequest -OutFile folder_audit.py <url>`.
+No pipx? Ask your AI agent to install it for your OS.
 
 ## Use
 
@@ -39,9 +20,7 @@ On Windows PowerShell, replace `curl` with `Invoke-WebRequest -OutFile folder_au
 folder-audit
 ```
 
-Same command on every OS. Generates `./folder-audit-report.html` and **auto-opens** in your default browser (macOS `open`, Linux `xdg-open`, Windows default app). Detects language from `$LANG` — Korean speakers get Korean output automatically.
-
-Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
+Generates an HTML report and auto-opens it. Korean speakers get Korean output automatically.
 
 ## What you get
 
@@ -87,110 +66,28 @@ Skip auto-open: `--no-open`. Force language: `--lang en` or `--lang ko`.
 ## Severity legend
 
 - **P0 critical** — Fix immediately. Security or data-loss risk.
-- **P1 action** — Address within the week. Structural integrity or build impact.
-- **P2 advisory** — Address within the month. Maintainability and clarity.
-- **P3 info** — Awareness only. No urgent action needed.
-- **Clean** — Rule found nothing in this area. Healthy.
+- **P1 action** — Address within the week. Structural integrity.
+- **P2 advisory** — Address within the month. Maintainability.
+- **P3 info** — Awareness only. No urgent action.
+- **Clean** — Nothing found. Healthy.
 
 ## What to do after a run
 
-The audit hands you a report. The cleanup is one prompt away.
+Ask your AI agent:
 
-**With Claude Code / Cursor / any AI agent** — the recommended flow:
+> _"Open this folder-audit report and fix the P0 and P1 findings. Show me each change before applying."_
 
-1. Run `folder-audit` (CLI output stays in your terminal)
-2. Copy the CLI output, or drag the HTML report into your AI session
-3. Prompt: _"Fix the P0 and P1 findings. Show me each change before applying."_
-4. Review → approve → done.
+The agent reads the report, plans the fixes, and applies them after your approval.
 
-That's the whole loop. **Audit → AI → cleanup.** No manual command-by-command.
+## Auto every Sunday
 
-**Or manually** if you want hands-on control:
+Ask your AI agent:
 
-- **P0** → fix immediately (security / data risk)
-- **P1** → fix within the week (structural)
-- **P2 / P3** → batch for next Sunday's cron
+> _"Set up a weekly job that runs `folder-audit` on my projects every Sunday 6 AM, saves the report to my Desktop, with `--no-open`."_
 
-Common rule shortcuts:
+The agent handles your OS, paths, and scheduler. Review before applying.
 
-- **R01 empty folder** → `rmdir <path>/` or add `.gitkeep` if intentional
-- **R03 missing README** → add a 1-line `README.md`, or whitelist the folder via `standard_child` in `rules.yml`
-- **R04 duplicate** → keep one canonical, `git rm` the rest
-- **R05 misplaced `.md`** → `git mv <file> reports/<file>`
-- **R10 `.env` exposed** → `echo ".env" >> .gitignore && git rm --cached .env`
-
-The real win: set up the [Sunday cron](#auto-every-sunday) below. Audit runs itself weekly, you paste into AI, move on with your week.
-
-## Auto every Sunday — by OS
-
-Schedule a weekly audit at 06:00 Sunday. First find your binary path:
-
-```bash
-which folder-audit         # macOS / Linux
-where folder-audit         # Windows (PowerShell)
-```
-
-Use that **absolute path** below — schedulers ignore `~` and your shell's `PATH`.
-
-### macOS — launchd (recommended)
-
-Save as `~/Library/LaunchAgents/com.user.folder-audit.plist`:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>com.user.folder-audit</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/Users/YOU/.local/bin/folder-audit</string>
-    <string>--path</string><string>/Users/YOU/projects</string>
-    <string>--out</string><string>/Users/YOU/Desktop/folder-audit.html</string>
-    <string>--no-open</string>
-  </array>
-  <key>StartCalendarInterval</key>
-  <dict>
-    <key>Weekday</key><integer>0</integer>
-    <key>Hour</key><integer>6</integer>
-    <key>Minute</key><integer>0</integer>
-  </dict>
-</dict>
-</plist>
-```
-
-Load it:
-
-```bash
-launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
-```
-
-### Linux — crontab
-
-```bash
-crontab -e
-```
-
-Add:
-
-```cron
-0 6 * * 0  /home/YOU/.local/bin/folder-audit --path /home/YOU/projects --out /home/YOU/folder-audit.html --no-open
-```
-
-### Windows — Task Scheduler
-
-PowerShell (run as your user, not Admin):
-
-```powershell
-schtasks /create /sc weekly /d SUN /st 06:00 /tn "FolderAudit" `
-  /tr "C:\Users\YOU\.local\bin\folder-audit.exe --path C:\Users\YOU\projects --out C:\Users\YOU\Desktop\folder-audit.html --no-open"
-```
-
-Or use the Task Scheduler GUI (Triggers → Weekly → Sunday 06:00, Actions → Start a program → folder-audit.exe with the args above).
-
-—
-
-Set this once on whatever OS you're on. The report lands on your Desktop every Sunday 06:00. Stop remembering.
+Set it once. Stop remembering.
 
 ## License
 

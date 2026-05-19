@@ -12,26 +12,7 @@
 pipx install git+https://github.com/sunyoung-lee/kairos-folder-audit.git
 ```
 
-**pipx 아직 없으면 먼저 설치:**
-
-| OS | 명령 |
-| --- | --- |
-| macOS | `brew install pipx && pipx ensurepath` |
-| Linux (apt) | `sudo apt install pipx && pipx ensurepath` |
-| Linux (dnf) | `sudo dnf install pipx && pipx ensurepath` |
-| Windows | `py -m pip install --user pipx && py -m pipx ensurepath` |
-
-**대안** (pipx 없이):
-
-```bash
-# uvx (더 빠름, 모던)
-uvx --from git+https://github.com/sunyoung-lee/kairos-folder-audit.git folder-audit
-
-# 제로 셋업 단일 파일 (Python 3.10+만 필요)
-curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py -o folder_audit.py && python3 folder_audit.py
-```
-
-Windows PowerShell은 `curl` 대신 `Invoke-WebRequest -OutFile folder_audit.py <url>`.
+pipx가 없으면 AI 에이전트에게 본인 OS에 맞게 설치 부탁하세요.
 
 ## 사용
 
@@ -39,9 +20,7 @@ Windows PowerShell은 `curl` 대신 `Invoke-WebRequest -OutFile folder_audit.py 
 folder-audit
 ```
 
-OS 동일. `./folder-audit-report.html` 생성 + **브라우저 자동 오픈** (macOS `open`, Linux `xdg-open`, Windows 기본 앱). `$LANG`이 `ko_KR`이면 자동으로 한국어 출력.
-
-자동 오픈 끄기: `--no-open`. 영어 강제: `--lang en`.
+HTML 리포트 생성 + 자동 오픈. 한국어 사용자는 자동으로 한국어 출력.
 
 ## 받는 가치
 
@@ -69,8 +48,6 @@ OS 동일. `./folder-audit-report.html` 생성 + **브라우저 자동 오픈** 
 
 ![report](./docs/report-dark-ko.png)
 
-`$LANG`이 `ko_KR`이면 자동으로 한국어 출력. 또는 `--lang ko` 명시.
-
 ## 10가지 체크
 
 | ID  | Sev | 무엇을 잡는가                                  |
@@ -89,110 +66,28 @@ OS 동일. `./folder-audit-report.html` 생성 + **브라우저 자동 오픈** 
 ## 심각도 안내
 
 - **P0 차단** — 즉시 수정. 보안 또는 데이터 손실 위험.
-- **P1 액션** — 이번 주 안에 처리. 구조 무결성 / 빌드 영향.
-- **P2 권고** — 이번 달 안에 처리. 유지보수성 / 명료성.
+- **P1 액션** — 이번 주 안에 처리. 구조 무결성.
+- **P2 권고** — 이번 달 안에 처리. 유지보수성.
 - **P3 안내** — 인지만. 급한 액션 X.
-- **Clean** — 룰이 잡은 게 없음. 해당 영역 건강.
+- **Clean** — 잡은 게 없음. 해당 영역 건강.
 
 ## 결과 받으면 무엇을 하나
 
-리포트가 나오면, 정리는 프롬프트 한 줄로 끝나요.
+AI 에이전트에게 부탁:
 
-**Claude Code / Cursor / 다른 AI 에이전트와** — 추천 흐름:
+> _"folder-audit 리포트 열어서 P0와 P1 finding 수정해줘. 변경 전에 각각 보여주고."_
 
-1. `folder-audit` 실행 (CLI 출력이 터미널에 남음)
-2. CLI 출력 복사, 또는 HTML 리포트를 AI 세션에 드래그
-3. 프롬프트: _"P0와 P1 finding 수정해줘. 변경 전에 각각 보여주고."_
-4. 검토 → 승인 → 끝.
+에이전트가 리포트를 읽고, 수정 계획을 짜고, 승인하면 적용합니다.
 
-이게 전체 루프예요. **Audit → AI → 정리.** 명령어 하나하나 직접 칠 필요 없음.
+## 매주 일요일 자동
 
-**또는 직접 정리** 하고 싶으면:
+AI 에이전트에게 부탁:
 
-- **P0** → 즉시 (보안 / 데이터 리스크)
-- **P1** → 이번 주 안에 (구조)
-- **P2 / P3** → 다음 일요일 cron에 일괄
+> _"`folder-audit`를 매주 일요일 06:00에 내 projects 폴더에 실행해서 리포트를 Desktop에 저장하는 주기 작업 등록해줘. `--no-open` 옵션도 추가."_
 
-룰별 빠른 명령:
+에이전트가 OS · 경로 · 스케줄러 다 알아서 처리. 적용 전 검토.
 
-- **R01 빈 폴더** → `rmdir <경로>/`, 의도된 거면 `.gitkeep` 박제
-- **R03 README 없음** → 1줄 `README.md` 추가, 또는 `rules.yml`의 `standard_child` 화이트리스트
-- **R04 중복** → 1개 권위본 + 나머지 `git rm`
-- **R05 misplaced `.md`** → `git mv <파일> reports/<파일>`
-- **R10 `.env` 노출** → `echo ".env" >> .gitignore && git rm --cached .env`
-
-진짜 가치: 아래 [일요일 cron](#매주-일요일-자동) 설정. audit이 자기가 매주 돌고, AI에 paste하면 정리가 끝납니다. 챙길 게 없어집니다.
-
-## 매주 일요일 자동 — OS별
-
-일요일 06:00 주간 audit 등록. 먼저 binary 절대 경로 확인:
-
-```bash
-which folder-audit         # macOS / Linux
-where folder-audit         # Windows (PowerShell)
-```
-
-이 **절대 경로**를 아래 사용 — 스케줄러는 `~`나 본인 셸 `PATH`를 모릅니다.
-
-### macOS — launchd (추천)
-
-`~/Library/LaunchAgents/com.user.folder-audit.plist`에 저장:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>com.user.folder-audit</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/Users/YOU/.local/bin/folder-audit</string>
-    <string>--path</string><string>/Users/YOU/projects</string>
-    <string>--out</string><string>/Users/YOU/Desktop/folder-audit.html</string>
-    <string>--no-open</string>
-  </array>
-  <key>StartCalendarInterval</key>
-  <dict>
-    <key>Weekday</key><integer>0</integer>
-    <key>Hour</key><integer>6</integer>
-    <key>Minute</key><integer>0</integer>
-  </dict>
-</dict>
-</plist>
-```
-
-등록:
-
-```bash
-launchctl load ~/Library/LaunchAgents/com.user.folder-audit.plist
-```
-
-### Linux — crontab
-
-```bash
-crontab -e
-```
-
-추가:
-
-```cron
-0 6 * * 0  /home/YOU/.local/bin/folder-audit --path /home/YOU/projects --out /home/YOU/folder-audit.html --no-open
-```
-
-### Windows — 작업 스케줄러
-
-PowerShell (관리자 X, 본인 계정):
-
-```powershell
-schtasks /create /sc weekly /d SUN /st 06:00 /tn "FolderAudit" `
-  /tr "C:\Users\YOU\.local\bin\folder-audit.exe --path C:\Users\YOU\projects --out C:\Users\YOU\Desktop\folder-audit.html --no-open"
-```
-
-또는 작업 스케줄러 GUI (트리거 → 매주 → 일요일 06:00, 작업 → 프로그램 시작 → 위 인자).
-
-—
-
-OS 상관없이 한 번만 세팅하면 끝. 매주 일요일 06:00에 리포트가 Desktop에 떨어집니다. 챙길 필요 없음.
+한 번 세팅, 다시 안 챙김.
 
 ## 라이센스
 
