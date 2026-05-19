@@ -16,8 +16,7 @@ pipx install git+https://github.com/sunyoung-lee/kairos-folder-audit.git
 uvx --from git+https://github.com/sunyoung-lee/kairos-folder-audit.git folder-audit
 
 # 단일 파일 (제로 셋업)
-curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py \
-  -o folder_audit.py && python3 folder_audit.py
+curl -sSL https://raw.githubusercontent.com/sunyoung-lee/kairos-folder-audit/main/folder_audit.py -o folder_audit.py && python3 folder_audit.py
 ```
 
 ## 사용
